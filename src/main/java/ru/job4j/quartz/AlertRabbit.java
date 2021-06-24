@@ -12,6 +12,8 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class AlertRabbit {
+    static String interval = "";
+
     public static void main(String[] args) {
         try {
             try (Connection connection = readProperties("/rabbit.properties")) {
@@ -23,7 +25,7 @@ public class AlertRabbit {
                     .usingJobData(data)
                     .build();
                 SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(10)
+                    .withIntervalInSeconds(Integer.parseInt(interval))
                     .repeatForever();
                 Trigger trigger = newTrigger()
                     .startNow()
@@ -44,6 +46,7 @@ public class AlertRabbit {
         try {
             Properties rabbitProperties = new Properties();
             rabbitProperties.load(AlertRabbit.class.getResourceAsStream(fileProperties));
+            interval = rabbitProperties.getProperty("rabbit.interval");
             Class.forName(rabbitProperties.getProperty("rabbit.driver"));
             return DriverManager.getConnection(
                     rabbitProperties.getProperty("rabbit.url"),
