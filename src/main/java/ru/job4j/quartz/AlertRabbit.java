@@ -14,14 +14,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public class AlertRabbit {
     public static void main(String[] args) {
         try {
-            Properties rabbitProperties = new Properties();
-            rabbitProperties.load(AlertRabbit.class.getResourceAsStream("/rabbit.properties"));
-            Class.forName(rabbitProperties.getProperty("rabbit.driver"));
-            try (Connection connection = DriverManager.getConnection(
-                    rabbitProperties.getProperty("rabbit.url"),
-                    rabbitProperties.getProperty("rabbit.username"),
-                    rabbitProperties.getProperty("rabbit.password")
-            )) {
+            try (Connection connection = readProperties("/rabbit.properties")) {
                 Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                 scheduler.start();
                 JobDataMap data = new JobDataMap();
@@ -45,6 +38,21 @@ public class AlertRabbit {
         } catch (Exception se) {
             se.printStackTrace();
         }
+    }
+
+    public static Connection readProperties(String fileProperties) {
+        try {
+            Properties rabbitProperties = new Properties();
+            rabbitProperties.load(AlertRabbit.class.getResourceAsStream(fileProperties));
+            Class.forName(rabbitProperties.getProperty("rabbit.driver"));
+            return DriverManager.getConnection(
+                    rabbitProperties.getProperty("rabbit.url"),
+                    rabbitProperties.getProperty("rabbit.username"),
+                    rabbitProperties.getProperty("rabbit.password"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static class Rabbit implements Job {
