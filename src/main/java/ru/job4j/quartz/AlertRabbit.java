@@ -3,7 +3,9 @@ package ru.job4j.quartz;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
+import java.sql.*;
 import java.util.Properties;
+import java.sql.Date;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -13,26 +15,34 @@ public class AlertRabbit {
     public static void main(String[] args) {
         try {
             Properties rabbitProperties = new Properties();
-            String interval = "";
-            try {
-                rabbitProperties.load(
-                        AlertRabbit.class.getResourceAsStream("/rabbit.properties"));
-                interval = rabbitProperties.getProperty("rabbit.interval");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.start();
-            JobDetail job = newJob(Rabbit.class).build();
-            SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(Integer.parseInt(interval))
+            rabbitProperties.load(AlertRabbit.class.getResourceAsStream("/rabbit.properties"));
+            Class.forName(rabbitProperties.getProperty("rabbit.driver"));
+            try (Connection connection = DriverManager.getConnection(
+                    rabbitProperties.getProperty("rabbit.url"),
+                    rabbitProperties.getProperty("rabbit.username"),
+                    rabbitProperties.getProperty("rabbit.password")
+            )) {
+                Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+                scheduler.start();
+                JobDataMap data = new JobDataMap();
+                data.put("connect", connection);
+                JobDetail job = newJob(Rabbit.class)
+                    .usingJobData(data)
+                    .build();
+                SimpleScheduleBuilder times = simpleSchedule()
+                    .withIntervalInSeconds(10)
                     .repeatForever();
-            Trigger trigger = newTrigger()
+                Trigger trigger = newTrigger()
                     .startNow()
                     .withSchedule(times)
                     .build();
-            scheduler.scheduleJob(job, trigger);
-        } catch (SchedulerException se) {
+                scheduler.scheduleJob(job, trigger);
+                Thread.sleep(10000);
+                scheduler.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (Exception se) {
             se.printStackTrace();
         }
     }
@@ -40,7 +50,19 @@ public class AlertRabbit {
     public static class Rabbit implements Job {
         @Override
         public void execute(JobExecutionContext context) throws JobExecutionException {
-            System.out.println("Rabbit runs here...");
+            Connection connection = (Connection) context
+                    .getJobDetail()
+                    .getJobDataMap()
+                    .get("connect");
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "insert into rabbit (created_date) values (?)"
+            )) {
+                statement.setDate(1, new Date(System.currentTimeMillis()));
+                statement.execute();
+                System.out.println("write into database completed");
+            } catch (Exception e) {
+
+            }
         }
     }
 }
