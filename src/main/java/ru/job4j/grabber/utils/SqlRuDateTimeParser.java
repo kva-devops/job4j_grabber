@@ -37,7 +37,7 @@ public class SqlRuDateTimeParser implements DateTimeParser {
             String[] buffChangeTime = dateTime.format(formatterForYesterday).split(" ");
             String rsl = buffChangeTime[0] + " " + buffDateTime[1];
             return LocalDateTime.parse(rsl, formatter);
-        } else if("сегодня,".equals(buffDateTime[0])) {
+        } else if ("сегодня,".equals(buffDateTime[0])) {
             LocalDateTime dateTime = LocalDateTime.now();
             DateTimeFormatter formatterForToday = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             String[] buffChangeTime = dateTime.format(formatterForToday).split(" ");
