@@ -8,6 +8,7 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import ru.job4j.grabber.utils.SqlRuDateTimeParser;
 
 public class SqlRuParse {
     public static void main(String[] args) throws IOException {
@@ -23,7 +24,8 @@ public class SqlRuParse {
                     System.out.println(href.attr("href"));
                     System.out.println(href.text());
                 }
-                System.out.println(elem.children().get(5).select(".altCol").text());
+                String publicTimeString = elem.children().get(5).select(".altCol").text();
+                System.out.println(new SqlRuDateTimeParser().parse(publicTimeString));
         }
     }
 }
