@@ -6,15 +6,17 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SqlRuParse {
     public static void main(String[] args) throws IOException {
         Document doc = Jsoup.connect("http://www.sql.ru/forum/job-offers").get();
         Element table = doc.getElementsByTag("tbody").get(2);
         Elements ourTable = table.children();
-        int i = 0;
-        for (Element elem : ourTable) {
-            if (i > 3) {
+        List<Element> afterSkip = new ArrayList<>();
+        ourTable.stream().skip(4).forEach(afterSkip::add);
+        for (Element elem : afterSkip) {
                 Elements parseLink = elem.select(".postslisttopic");
                 for (Element td : parseLink) {
                     Element href = td.child(0);
@@ -22,9 +24,6 @@ public class SqlRuParse {
                     System.out.println(href.text());
                 }
                 System.out.println(elem.children().get(5).select(".altCol").text());
-            } else {
-                i++;
-            }
         }
     }
 }
