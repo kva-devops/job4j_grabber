@@ -6,7 +6,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,10 +16,15 @@ import ru.job4j.grabber.utils.SqlRuDateTimeParser;
 public class SqlRuParse implements Parse {
     public static int id = 0;
     public String title = "";
-    public LocalDateTime createdTime = null;
+    public SqlRuDateTimeParser parserDateAndTime;
+    public String publicTime = "";
+
+    public SqlRuParse(SqlRuDateTimeParser parserDateAndTime) {
+        this.parserDateAndTime = parserDateAndTime;
+    }
 
     public static void main(String[] args) throws IOException {
-        SqlRuParse object = new SqlRuParse();
+        SqlRuParse object = new SqlRuParse(new SqlRuDateTimeParser());
         List<Post> rsl = object.list("http://www.sql.ru/forum/job-offers/");
         System.out.println(rsl.toString());
     }
@@ -55,8 +59,7 @@ public class SqlRuParse implements Parse {
                     urlDescription = href.attr("href");
                     title = href.text();
                 }
-                String publicTimeString = elem.children().get(5).select(".altCol").text();
-                createdTime = new SqlRuDateTimeParser().parse(publicTimeString);
+                publicTime = elem.children().get(5).select(".altCol").text();
                 Post element = detail(urlDescription);
                 result.add(element);
             }
@@ -71,7 +74,7 @@ public class SqlRuParse implements Parse {
         result.setTitle(title);
         result.setLink(link);
         result.setDescription(printDescription(link));
-        result.setCrated(createdTime);
+        result.setCrated(parserDateAndTime.parse(publicTime));
         return result;
     }
 }
