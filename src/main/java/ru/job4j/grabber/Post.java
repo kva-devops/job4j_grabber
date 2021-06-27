@@ -17,6 +17,10 @@ public class Post {
         this.crated = crated;
     }
 
+    public Post() {
+
+    }
+
     public int getId() {
         return id;
     }
@@ -55,5 +59,16 @@ public class Post {
 
     public void setCrated(LocalDateTime crated) {
         this.crated = crated;
+    }
+
+    @Override
+    public String toString() {
+        return "Post{"
+                + "id=" + id
+                + ", title='" + title + '\''
+                + ", link='" + link + '\''
+                + ", description='" + description + '\''
+                + ", crated=" + crated
+                + '}';
     }
 }

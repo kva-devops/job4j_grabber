@@ -6,22 +6,43 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
+import ru.job4j.grabber.Parse;
+import ru.job4j.grabber.Post;
 import ru.job4j.grabber.utils.SqlRuDateTimeParser;
 
-public class SqlRuParse {
+public class SqlRuParse implements Parse {
+    public static int id = 0;
+    public String title = "";
+    public LocalDateTime createdTime = null;
+
     public static void main(String[] args) throws IOException {
-        String urlTemplate = "http://www.sql.ru/forum/job-offers/";
+        SqlRuParse object = new SqlRuParse();
+        List<Post> rsl = object.list("http://www.sql.ru/forum/job-offers/");
+        System.out.println(rsl.toString());
+    }
+
+    public static String printDescription(String urlDescLink) throws IOException {
+        Document docInner = Jsoup.connect(urlDescLink).get();
+        Element tableInner = docInner.getElementsByTag("tbody").get(1);
+        Elements outTableInner = tableInner.children();
+        if (outTableInner.size() == 1) {
+            tableInner = docInner.getElementsByTag("tbody").get(2);
+            outTableInner = tableInner.children();
+        }
+        return outTableInner.get(1).select(".msgBody").get(1).text();
+    }
+
+    @Override
+    public List<Post> list(String link) throws IOException {
+        List<Post> result = new ArrayList<>();
         String urlDescription = "";
-        int pageLimit = 5;
+        int pageLimit = 1;
         for (int i = 1; i <= pageLimit; i++) {
-            System.out.printf("===============Page %d===============", i);
-            System.out.println();
-            String urlMain = urlTemplate + i;
+            String urlMain = link + i;
             Document doc = Jsoup.connect(urlMain).get();
             Element table = doc.getElementsByTag("tbody").get(2);
             Elements ourTable = table.children();
@@ -32,32 +53,25 @@ public class SqlRuParse {
                 for (Element td : parseLink) {
                     Element href = td.child(0);
                     urlDescription = href.attr("href");
-                    System.out.println(urlDescription);
-                    System.out.println(href.text());
+                    title = href.text();
                 }
                 String publicTimeString = elem.children().get(5).select(".altCol").text();
-                System.out.println(new SqlRuDateTimeParser().parse(publicTimeString));
-                printDescription(urlDescription);
+                createdTime = new SqlRuDateTimeParser().parse(publicTimeString);
+                Post element = detail(urlDescription);
+                result.add(element);
             }
-
         }
+        return result;
     }
 
-    public static void printDescription(String urlDescLink) throws IOException {
-        Document docInner = Jsoup.connect(urlDescLink).get();
-        Element tableInner = docInner.getElementsByTag("tbody").get(1);
-        Elements outTableInner = tableInner.children();
-        if (outTableInner.size() == 1) {
-            tableInner = docInner.getElementsByTag("tbody").get(2);
-            outTableInner = tableInner.children();
-        }
-        System.out.println(outTableInner.get(1).select(".msgBody").get(1).text());
-        String[] buffDesc = outTableInner.get(2).select(".msgFooter").get(0).text().split(", ");
-        String rslTime = buffDesc[0] + ", ";
-        Optional<String> timeOpt = Arrays.stream(buffDesc[1].split(" ")).findFirst();
-        if (timeOpt.isPresent()) {
-            rslTime += timeOpt.get();
-        }
-        System.out.println(new SqlRuDateTimeParser().parse(rslTime));
+    @Override
+    public Post detail(String link) throws IOException {
+        Post result = new Post();
+        result.setId(id++);
+        result.setTitle(title);
+        result.setLink(link);
+        result.setDescription(printDescription(link));
+        result.setCrated(createdTime);
+        return result;
     }
 }
