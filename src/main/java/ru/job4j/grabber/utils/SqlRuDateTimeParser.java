@@ -8,6 +8,8 @@ import static java.util.Map.entry;
 
 public class SqlRuDateTimeParser implements DateTimeParser {
 
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     Map<String, String> calendarMap = Map.ofEntries(
             entry("янв", "01"),
             entry("фев", "02"),
@@ -28,7 +30,6 @@ public class SqlRuDateTimeParser implements DateTimeParser {
 
     @Override
     public LocalDateTime parse(String parse) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         String[] buffDateTime = parse.split(" ");
         String rsl;
         LocalDateTime dateTime;
@@ -47,11 +48,10 @@ public class SqlRuDateTimeParser implements DateTimeParser {
                     + "-" + buffDateTime[0]
                     + " "
                     + buffDateTime[3];
-            return LocalDateTime.parse(rsl, formatter);
+            return LocalDateTime.parse(rsl, FORMATTER);
         }
-        DateTimeFormatter formatterForYesterdayAndToday = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        String[] buffChangeTime = dateTime.format(formatterForYesterdayAndToday).split(" ");
+        String[] buffChangeTime = dateTime.format(FORMATTER).split(" ");
         rsl = buffChangeTime[0] + " " + buffDateTime[1];
-        return LocalDateTime.parse(rsl, formatter);
+        return LocalDateTime.parse(rsl, FORMATTER);
     }
 }
