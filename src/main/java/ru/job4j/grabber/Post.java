@@ -7,14 +7,14 @@ public class Post {
     private String title;
     private String link;
     private String description;
-    private LocalDateTime crated;
+    private LocalDateTime created;
 
     public Post(int id, String title, String link, String description, LocalDateTime crated) {
         this.id = id;
         this.title = title;
         this.link = link;
         this.description = description;
-        this.crated = crated;
+        this.created = crated;
     }
 
     public Post() {
@@ -53,12 +53,12 @@ public class Post {
         this.description = description;
     }
 
-    public LocalDateTime getCrated() {
-        return crated;
+    public LocalDateTime getCreated() {
+        return created;
     }
 
-    public void setCrated(LocalDateTime crated) {
-        this.crated = crated;
+    public void setCreated(LocalDateTime crated) {
+        this.created = crated;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class Post {
                 + ", title='" + title + '\''
                 + ", link='" + link + '\''
                 + ", description='" + description + '\''
-                + ", crated=" + crated
+                + ", created=" + created
                 + '}';
     }
 }
