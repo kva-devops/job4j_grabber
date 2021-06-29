@@ -18,6 +18,7 @@ import ru.job4j.grabber.Grab;
 import ru.job4j.grabber.Parse;
 import ru.job4j.grabber.Post;
 import ru.job4j.grabber.Store;
+import ru.job4j.grabber.utils.DateTimeParser;
 import ru.job4j.grabber.utils.SqlRuDateTimeParser;
 
 import static org.quartz.JobBuilder.newJob;
@@ -27,16 +28,17 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public class SqlRuParse implements Parse, Store, Grab {
     public static int id = 0;
     public String title = "";
-    public SqlRuDateTimeParser parserDateAndTime;
+    public DateTimeParser parserDateAndTime;
     public String publicTime = "";
     private Connection cn;
 
-    public SqlRuParse(SqlRuDateTimeParser parserDateAndTime) {
+    public SqlRuParse(DateTimeParser parserDateAndTime) {
         this.parserDateAndTime = parserDateAndTime;
     }
 
     public static void main(String[] args) throws SchedulerException {
-        SqlRuParse object = new SqlRuParse(new SqlRuDateTimeParser());
+        DateTimeParser dateTimeParser = new SqlRuDateTimeParser();
+        SqlRuParse object = new SqlRuParse(dateTimeParser);
         Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
         object.init(object, object, scheduler);
         object.initConnection();
