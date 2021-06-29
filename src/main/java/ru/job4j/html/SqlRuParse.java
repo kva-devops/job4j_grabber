@@ -31,7 +31,7 @@ public class SqlRuParse implements Parse, Store, Grab {
     public DateTimeParser parserDateAndTime;
     public String publicTime = "";
     private Connection cn;
-
+    private String urlForParse = "";
     public SqlRuParse(DateTimeParser parserDateAndTime) {
         this.parserDateAndTime = parserDateAndTime;
     }
@@ -106,6 +106,7 @@ public class SqlRuParse implements Parse, Store, Grab {
                     config.getProperty("rabbit.username"),
                     config.getProperty("rabbit.password")
             );
+            urlForParse = config.getProperty("rabbit.url.for.parsing");
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -115,7 +116,7 @@ public class SqlRuParse implements Parse, Store, Grab {
     @Override
     public void save(Post post) {
         try (PreparedStatement statement = cn.prepareStatement(
-                "insert into post (name, text, link, created) values (?, ?, ?, ?)",
+                "insert into post (name, text, link, created) values (?, ?, ?, ?) on conflict (link) do nothing",
                 Statement.RETURN_GENERATED_KEYS
         )) {
             statement.setString(1, post.getTitle());
@@ -217,8 +218,8 @@ public class SqlRuParse implements Parse, Store, Grab {
                     .getJobDataMap()
                     .get("object");
             try (Statement statement = connection.createStatement()) {
-                String sql = "drop table if exists post;" + System.lineSeparator()
-                        + "create table if not exists post (" + System.lineSeparator()
+                String sql =
+                         "create table if not exists post (" + System.lineSeparator()
                         + "id serial primary key," + System.lineSeparator()
                         + "name varchar(255)," + System.lineSeparator()
                         + "text text," + System.lineSeparator()
@@ -226,17 +227,12 @@ public class SqlRuParse implements Parse, Store, Grab {
                         + "created timestamp" + System.lineSeparator()
                         + ");";
                 statement.execute(sql);
+                List<Post> rsl = object.list(object.urlForParse);
+                for (Post post : rsl) {
+                    object.save(post);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-            }
-            List<Post> rsl = new ArrayList<>();
-            try {
-                rsl = object.list("http://www.sql.ru/forum/job-offers/");
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-            for (Post post : rsl) {
-                object.save(post);
             }
         }
     }
