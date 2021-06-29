@@ -1,9 +1,6 @@
 package ru.job4j.grabber;
 
-import java.io.InputStream;
 import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -25,28 +22,17 @@ public class PsqlStore implements Store, AutoCloseable {
         );
     }
 
-    public static void main(String[] args) {
-        try (InputStream in = PsqlStore.class.getClassLoader().getResourceAsStream("rabbit.properties")) {
-            Properties properties = new Properties();
-            properties.load(in);
-            PsqlStore parseSession = new PsqlStore(properties);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-            Post testPostOne = new Post(
-                    1,
-                    "Разработчик1",
-                    "http://www.address1.ru",
-                    "Описание вакансии разработчика1",
-                    LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter));
-            Post testPostTwo = new Post(
-                    2,
-                    "Разработчик2",
-                    "http://www.address2.ru",
-                    "Описание вакансии разработчика2",
-                    LocalDateTime.parse(LocalDateTime.now().format(formatter), formatter));
-            parseSession.save(testPostOne);
-            parseSession.save(testPostTwo);
-            System.out.println(parseSession.getAll());
-            System.out.println(parseSession.findById(2));
+    private void tableExistChecking() {
+        try (Statement statement = cnn.createStatement()) {
+            String sql =
+                    "create table if not exists post (" + System.lineSeparator()
+                            + "id serial primary key," + System.lineSeparator()
+                            + "name varchar(255)," + System.lineSeparator()
+                            + "text text," + System.lineSeparator()
+                            + "link varchar(255) unique," + System.lineSeparator()
+                            + "created timestamp" + System.lineSeparator()
+                            + ");";
+            statement.execute(sql);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -54,6 +40,7 @@ public class PsqlStore implements Store, AutoCloseable {
 
     @Override
     public void save(Post post) {
+        tableExistChecking();
         try (PreparedStatement statement = cnn.prepareStatement(
                 "insert into post (name, text, link, created) values (?, ?, ?, ?) on conflict (link) do nothing",
                 Statement.RETURN_GENERATED_KEYS
