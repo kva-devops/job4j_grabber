@@ -8,6 +8,10 @@ import ru.job4j.html.SqlRuParse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -75,6 +79,48 @@ public class Grabber implements Grab {
         }
     }
 
+    public void web(Store store) {
+        new Thread(() -> {
+            try (ServerSocket server = new ServerSocket(Integer.parseInt(
+                    cfg.getProperty("rabbit.port")
+            ))) {
+                while (!server.isClosed()) {
+                    Socket socket = server.accept();
+                    try (OutputStream out = socket.getOutputStream()) {
+                        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+                        out.write("<html>".getBytes());
+                        out.write("<body>".getBytes());
+                        out.write("<table border=1>".getBytes());
+                        for (Post post : store.getAll()) {
+                            out.write("<tr>".getBytes());
+                            out.write("<td><b>".getBytes());
+                            out.write(post.getTitle().getBytes(Charset.forName("Windows-1251")));
+                            out.write(System.lineSeparator().getBytes());
+                            out.write("</b><a href=".getBytes());
+                            out.write(post.getLink().getBytes(Charset.forName("Windows-1251")));
+                            out.write(">".getBytes());
+                            out.write("ссылка".getBytes(Charset.forName("Windows-1251")));
+                            out.write("</a>".getBytes());
+                            out.write(System.lineSeparator().getBytes());
+                            out.write("дата публикации: <b>".getBytes(Charset.forName("Windows-1251")));
+                            out.write(post.getCreated().toString().getBytes());
+                            out.write("</b><br>".getBytes());
+                            out.write(post.getDescription().getBytes(Charset.forName("Windows-1251")));
+                            out.write("</td>".getBytes());
+                            out.write("</tr>".getBytes());
+                        }
+                        out.write("</table>".getBytes());
+                        out.write("</body>".getBytes());
+                        out.write("</html>".getBytes());
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
     public static void main(String[] args) throws Exception {
         Grabber grab = new Grabber();
         grab.cfg();
@@ -82,5 +128,6 @@ public class Grabber implements Grab {
         Store store = grab.store();
         DateTimeParser dateTimeParser = new SqlRuDateTimeParser();
         grab.init(new SqlRuParse(dateTimeParser, pageLimit), store, scheduler);
+        grab.web(store);
     }
 }
