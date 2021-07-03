@@ -20,6 +20,23 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class Grabber implements Grab {
+    public static final String TEMPLATE_WEB = """
+            <table border=1>
+                <tr>
+                    <td><b>%s</b></td>
+                </tr>
+                <tr>
+                    <td><a href=%s>ссылка</td>
+                </tr>
+                <tr>
+                    <td><i>%s</i></td>
+                </tr>
+                <tr>
+                    <td>%s</td>
+                </tr>
+            </table>
+            """;
+
     public static int pageLimit;
 
     private final Properties cfg = new Properties();
@@ -79,7 +96,8 @@ public class Grabber implements Grab {
         }
     }
 
-    public void web(Store store) {
+    public void web(Store store, String template) {
+
         new Thread(() -> {
             try (ServerSocket server = new ServerSocket(Integer.parseInt(
                     cfg.getProperty("rabbit.port")
@@ -90,26 +108,13 @@ public class Grabber implements Grab {
                         out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
                         out.write("<html>".getBytes());
                         out.write("<body>".getBytes());
-                        out.write("<table border=1>".getBytes());
                         for (Post post : store.getAll()) {
-                            out.write("<tr>".getBytes());
-                            out.write("<td><b>".getBytes());
-                            out.write(post.getTitle().getBytes(Charset.forName("Windows-1251")));
-                            out.write(System.lineSeparator().getBytes());
-                            out.write("</b><a href=".getBytes());
-                            out.write(post.getLink().getBytes(Charset.forName("Windows-1251")));
-                            out.write(">".getBytes());
-                            out.write("ссылка".getBytes(Charset.forName("Windows-1251")));
-                            out.write("</a>".getBytes());
-                            out.write(System.lineSeparator().getBytes());
-                            out.write("дата публикации: <b>".getBytes(Charset.forName("Windows-1251")));
-                            out.write(post.getCreated().toString().getBytes());
-                            out.write("</b><br>".getBytes());
-                            out.write(post.getDescription().getBytes(Charset.forName("Windows-1251")));
-                            out.write("</td>".getBytes());
-                            out.write("</tr>".getBytes());
+                            out.write(String.format(template,
+                                    post.getTitle(),
+                                    post.getLink(),
+                                    post.getCreated().toString(),
+                                    post.getDescription()).getBytes(Charset.forName("Windows-1251")));
                         }
-                        out.write("</table>".getBytes());
                         out.write("</body>".getBytes());
                         out.write("</html>".getBytes());
                     } catch (IOException ioe) {
@@ -128,6 +133,6 @@ public class Grabber implements Grab {
         Store store = grab.store();
         DateTimeParser dateTimeParser = new SqlRuDateTimeParser();
         grab.init(new SqlRuParse(dateTimeParser, pageLimit), store, scheduler);
-        grab.web(store);
+        grab.web(store, TEMPLATE_WEB);
     }
 }
