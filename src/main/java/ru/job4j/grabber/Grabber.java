@@ -20,8 +20,11 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class Grabber implements Grab {
+
     public static int pageLimit;
+
     private final Properties cfg = new Properties();
+
     public Store store() throws SQLException {
         return new PsqlStore(cfg);
     }
