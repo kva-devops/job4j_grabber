@@ -21,6 +21,23 @@ import static org.quartz.TriggerBuilder.newTrigger;
 
 public class Grabber implements Grab {
 
+    public static final String TEMPLATE_WEB = """
+            <table border=1>
+                <tr>
+                    <td><b>%s</b></td>
+                </tr>
+                <tr>
+                    <td><a href=%s>ссылка</td>
+                </tr>
+                <tr>
+                    <td><i>%s</i></td>
+                </tr>
+                <tr>
+                    <td>%s</td>
+                </tr>
+            </table>
+            """;
+
     public static int pageLimit;
 
     private final Properties cfg = new Properties();
@@ -80,7 +97,7 @@ public class Grabber implements Grab {
         }
     }
 
-    public void web(Store store) {
+    public void web(Store store, String template) {
 
         new Thread(() -> {
             try (ServerSocket server = new ServerSocket(Integer.parseInt(
@@ -93,12 +110,11 @@ public class Grabber implements Grab {
                         out.write("<html>".getBytes());
                         out.write("<body>".getBytes());
                         for (Post post : store.getAll()) {
-                            out.write(post.getTitle().getBytes(Charset.forName("Windows-1251")));
-                            out.write(post.getLink().getBytes(Charset.forName("Windows-1251")));
-                            out.write(post.getCreated().toString().getBytes(Charset.forName("Windows-1251")));
-                            out.write(post.getTitle().getBytes(Charset.forName("Windows-1251")));
-                            out.write(post.getDescription().getBytes(Charset.forName("Windows-1251")));
-                            out.write("<hr>".getBytes());
+                            out.write(String.format(template,
+                                    post.getTitle(),
+                                    post.getLink(),
+                                    post.getCreated().toString(),
+                                    post.getDescription()).getBytes(Charset.forName("Windows-1251")));
                         }
                         out.write("</body>".getBytes());
                         out.write("</html>".getBytes());
@@ -119,6 +135,6 @@ public class Grabber implements Grab {
         Store store = grab.store();
         DateTimeParser dateTimeParser = new SqlRuDateTimeParser();
         grab.init(new SqlRuParse(dateTimeParser, pageLimit), store, scheduler);
-        grab.web(store);
+        grab.web(store, TEMPLATE_WEB);
     }
 }
